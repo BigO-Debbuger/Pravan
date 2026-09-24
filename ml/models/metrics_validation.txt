@@ -1,0 +1,21 @@
+============================================================
+  METRICS — VALIDATION
+============================================================
+  Samples          : 30,250
+  MAE              : 59.0602 mm
+  RMSE             : 89.5691 mm
+  R2               : -0.004286
+
+  Actual mean      : -6.3964 mm
+  Predicted mean   : -2.6875 mm
+  Actual std       : 89.3778 mm
+  Predicted std    : 1.2354 mm
+  Predicted min    : -14.7125 mm
+  Predicted max    : -1.9985 mm
+============================================================
+
+SCIENTIFIC CHECKS:
+  WARNING: Predictions may be collapsing toward mean (pred_std/true_std = 0.014).
+
+SCIENTIFIC LIMITATION:
+  Dataset spans 28 months (22 usable after lag window drops). Val set covers Jun-Jul 2022 (2 early monsoon months with active rainfall variance). Because training contains only one prior monsoon season (2021), interannual variability is high and generalization is strictly constrained by sample size.

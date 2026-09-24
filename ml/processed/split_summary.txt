@@ -1,0 +1,52 @@
+SPLIT SUMMARY
+==================================================
+Total months (after NaN drop) : 22
+First 6 months dropped (incomplete lag windows)
+
+TRAIN : 18 months | 2020-12-31 to 2022-05-31 | 272,250 rows
+VAL   : 2 months | 2022-06-30 to 2022-07-31 | 30,250 rows
+TEST  : 2 months | 2022-08-31 to 2022-09-30 | 30,250 rows
+
+FEATURES (18 raw, 18 scaled):
+  year
+  month
+  month_sin
+  month_cos
+  months_since_start
+  lat
+  lon
+  lat_norm
+  lon_norm
+  climatology_mm
+  anomaly_lag1
+  anomaly_lag2
+  anomaly_lag3
+  precip_lag1
+  precip_lag2
+  rolling_mean_3m
+  rolling_std_3m
+  rolling_mean_6m
+
+TARGET: anomaly_mm
+
+SCALER: fit on TRAIN only (mean/std per feature)
+
+SCALER PARAMS (train):
+  year                     : mean=2021.2223, std=0.5329
+  month                    : mean=5.8333, std=3.6248
+  month_sin                : mean=0.2073, std=0.6760
+  month_cos                : mean=0.0556, std=0.7049
+  months_since_start       : mean=14.5000, std=5.1881
+  lat                      : mean=21.5000, std=9.0208
+  lon                      : mean=83.0000, std=8.7321
+  lat_norm                 : mean=0.0000, std=1.0000
+  lon_norm                 : mean=0.0000, std=1.0000
+  climatology_mm           : mean=49.8363, std=119.7454
+  anomaly_lag1             : mean=-2.3170, std=40.0344
+  anomaly_lag2             : mean=-2.3170, std=40.0344
+  anomaly_lag3             : mean=-1.9811, std=44.5562
+  precip_lag1              : mean=47.5193, std=120.9930
+  precip_lag2              : mean=47.5193, std=120.9930
+  rolling_mean_3m          : mean=51.3939, std=100.9947
+  rolling_std_3m           : mean=42.7146, std=78.9057
+  rolling_mean_6m          : mean=69.4924, std=85.0946

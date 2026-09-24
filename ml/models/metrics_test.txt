@@ -1,0 +1,24 @@
+============================================================
+  METRICS — TEST (FINAL)
+============================================================
+  Samples          : 30,250
+  MAE              : 48.4801 mm
+  RMSE             : 70.6850 mm
+  R2               : -0.016886
+
+  Actual mean      : -2.5735 mm
+  Predicted mean   : -3.1419 mm
+  Actual std       : 70.0957 mm
+  Predicted std    : 3.1397 mm
+  Predicted min    : -22.3727 mm
+  Predicted max    : 13.1676 mm
+============================================================
+
+FINAL TEST SET - HELD OUT
+Test covers Aug-Sep 2022 (2 held-out late monsoon months)
+
+SCIENTIFIC CHECKS:
+  WARNING: Predictions collapsing toward mean (std ratio = 0.045).
+
+SCIENTIFIC LIMITATION:
+  Test set covers Aug-Sep 2022 (2 held-out late monsoon months). This represents a strict out-of-time evaluation during peak monsoon variability. With only 2 months of test snapshots, metrics should be interpreted with awareness of short-record sample variance.

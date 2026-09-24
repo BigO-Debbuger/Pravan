@@ -1,0 +1,19 @@
+{
+  "split": "test (FINAL)",
+  "n_samples": 30250,
+  "MAE_mm": 48.4801,
+  "RMSE_mm": 70.685,
+  "R2": -0.016886,
+  "actual_mean_mm": -2.5735,
+  "predicted_mean_mm": -3.1419,
+  "actual_std_mm": 70.0957,
+  "predicted_std_mm": 3.1397,
+  "predicted_min_mm": -22.3727,
+  "predicted_max_mm": 13.1676,
+  "predicted_std_ratio_to_actual": 0.0448,
+  "mean_bias_mm": -0.5684,
+  "scientific_limitation": "Test set covers Aug-Sep 2022 (2 held-out late monsoon months). This represents a strict out-of-time evaluation during peak monsoon variability. With only 2 months of test snapshots, metrics should be interpreted with awareness of short-record sample variance.",
+  "scientific_checks": [
+    "WARNING: Predictions collapsing toward mean (std ratio = 0.045)."
+  ]
+}

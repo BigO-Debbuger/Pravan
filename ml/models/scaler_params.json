@@ -1,0 +1,74 @@
+{
+  "year": {
+    "mean": 2021.2223,
+    "std": 0.5329
+  },
+  "month": {
+    "mean": 5.8333,
+    "std": 3.6248
+  },
+  "month_sin": {
+    "mean": 0.2073,
+    "std": 0.676
+  },
+  "month_cos": {
+    "mean": 0.0556,
+    "std": 0.7049
+  },
+  "months_since_start": {
+    "mean": 14.5,
+    "std": 5.1881
+  },
+  "lat": {
+    "mean": 21.5,
+    "std": 9.0208
+  },
+  "lon": {
+    "mean": 83.0,
+    "std": 8.7321
+  },
+  "lat_norm": {
+    "mean": 0.0,
+    "std": 1.0
+  },
+  "lon_norm": {
+    "mean": 0.0,
+    "std": 1.0
+  },
+  "climatology_mm": {
+    "mean": 49.8363,
+    "std": 119.7454
+  },
+  "anomaly_lag1": {
+    "mean": -2.317,
+    "std": 40.0344
+  },
+  "anomaly_lag2": {
+    "mean": -2.317,
+    "std": 40.0344
+  },
+  "anomaly_lag3": {
+    "mean": -1.9811,
+    "std": 44.5562
+  },
+  "precip_lag1": {
+    "mean": 47.5193,
+    "std": 120.993
+  },
+  "precip_lag2": {
+    "mean": 47.5193,
+    "std": 120.993
+  },
+  "rolling_mean_3m": {
+    "mean": 51.3939,
+    "std": 100.9947
+  },
+  "rolling_std_3m": {
+    "mean": 42.7146,
+    "std": 78.9057
+  },
+  "rolling_mean_6m": {
+    "mean": 69.4924,
+    "std": 85.0946
+  }
+}

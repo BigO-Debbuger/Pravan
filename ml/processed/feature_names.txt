@@ -1,0 +1,41 @@
+RAW FEATURE COLUMNS:
+  year
+  month
+  month_sin
+  month_cos
+  months_since_start
+  lat
+  lon
+  lat_norm
+  lon_norm
+  climatology_mm
+  anomaly_lag1
+  anomaly_lag2
+  anomaly_lag3
+  precip_lag1
+  precip_lag2
+  rolling_mean_3m
+  rolling_std_3m
+  rolling_mean_6m
+
+SCALED FEATURE COLUMNS (use these for model input):
+  year_scaled
+  month_scaled
+  month_sin_scaled
+  month_cos_scaled
+  months_since_start_scaled
+  lat_scaled
+  lon_scaled
+  lat_norm_scaled
+  lon_norm_scaled
+  climatology_mm_scaled
+  anomaly_lag1_scaled
+  anomaly_lag2_scaled
+  anomaly_lag3_scaled
+  precip_lag1_scaled
+  precip_lag2_scaled
+  rolling_mean_3m_scaled
+  rolling_std_3m_scaled
+  rolling_mean_6m_scaled
+
+TARGET COLUMN: anomaly_mm
