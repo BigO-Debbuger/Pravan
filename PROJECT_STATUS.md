@@ -309,5 +309,15 @@ python plot_anomaly.py    # -> era5_anomaly_map.png (<2s)
 |---|---|
 | **Date/Time** | 2026-09-24 |
 | **Updated By** | Antigravity AI |
-| **Latest Work** | Rewrote PROJECT_STATUS.md to reflect the current, verified ML state. Discarded stale/contradictory snapshots of frontend/backend progress per user instruction. |
+| **Latest Work** | Rewrote PROJECT_STATUS.md to reflect the current, verified ML state. Created GitHub checkpoint. |
 | **Current Phase** | Preparing to design and implement a robust spatio-temporal forecasting model. |
+
+---
+
+## 12. GitHub Checkpoint
+
+- **Checkpoint Commit:** `aa8d22a` (Add ERA5 preprocessing and XGBoost baseline)
+- **Date:** 2026-09-24
+- **Committed:** ML preprocessing scripts, feature engineering pipeline, XGBoost baseline code, Parquet splits, model configs, and existing frontend/backend code.
+- **Intentionally Excluded:** `*.nc` (raw ERA5 ~169MB dataset, generated climatology/anomaly NetCDFs) and `*.png` visualizations.
+- **Status:** Raw dataset remains local. The repository is ready for the next ML architecture phase.
