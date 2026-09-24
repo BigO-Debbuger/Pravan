@@ -21,7 +21,36 @@ the data volume and compute requirements are satisfied.
 
 ## EXP-001: Statistical Extreme-Event Baseline
 
-**Status:** NOT STARTED
+**Status:** ✅ COMPLETE — Run on 2026-09-24. Exit code 0.
+
+### Command Executed
+```bash
+python ml/experiments/exp001_extreme_baseline.py
+```
+
+### Actual Results (Verified)
+| Metric | Value |
+|---|---|
+| Total monthly timesteps | 28 |
+| Grid | 125 lat × 121 lon = 15,125 cells |
+| Threshold | \|anomaly\| > 1.5 × local per-cell std-dev |
+| Total extreme cell-months | 61,921 (14.62% of all cell-months) |
+| Wet extreme cell-months | 31,109 |
+| Dry extreme cell-months | 30,812 |
+| Hotspot cells (freq ≥ 30%) | 0 (no cell is extreme in ≥ 30% of timesteps — expected with only 28 months) |
+| Cell std-dev range | 0.29 mm (min) to 338.05 mm (max), mean 46.56 mm |
+| Round-trip NetCDF verification | PASSED |
+
+### Output Files
+- `ml/experiments/exp001_extreme_masks.nc` — binary + signed extreme masks, local_std, local_threshold
+- `ml/experiments/exp001_stats.json` — full statistics including per-timestep, seasonal, monthly, spatial
+- `ml/experiments/exp001_extreme_map.png` — 4-panel dark-theme visualization
+
+### Limitations
+- Threshold derived from the same 28-month record being analyzed (retrospective, not predictive).
+- 28 months is insufficient for a climatological normal (WMO = 30 years).
+- No cell is extreme in ≥ 30% of available timesteps — consistent with only 2 monsoon seasons.
+- This is NOT a forecast. No model accuracy is claimed.
 
 ### Goal
 Detect extreme precipitation anomalies using only statistical thresholds.
@@ -329,12 +358,13 @@ Output: [1, 125, 121] — next-month anomaly map
 
 | Experiment | Status | Blocks |
 |---|---|---|
-| EXP-001: Statistical extreme baseline | NOT STARTED | Nothing |
+| EXP-001: Statistical extreme baseline | ✅ COMPLETE (2026-09-24) | — |
 | EXP-002: Persistence baseline | NOT STARTED | Nothing |
 | EXP-003: XGBoost baseline | ✅ COMPLETE | — |
 | EXP-004: Spatial event tracking | NOT STARTED | EXP-001 output |
 | EXP-005: CNN on gridded fields | NOT STARTED | Extended ERA5 needed |
 | EXP-006: ConvLSTM | NOT STARTED | Extended ERA5 + GPU needed |
 
-**Immediate next step: Implement EXP-001 (statistical extreme labeling) and EXP-002 (persistence baseline).**
-These require no new data and no new model training.
+**Immediate next step: Implement EXP-002 (Persistence Baseline).**
+EXP-001 is complete. EXP-002 requires no new data and no model training.
+

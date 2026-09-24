@@ -156,6 +156,12 @@ SIH Second statement/
 [x] ml/EXPERIMENT_PLAN.md created: EXP-001 through EXP-006 fully specified with metrics
 [x] GitHub repository initialized: remote = https://github.com/BigO-Debbuger/Pravan
 [x] First commit pushed to origin/main: aa8d22a and 4f0c77a
+[x] EXP-001 COMPLETE: Statistical extreme-event baseline (ml/experiments/exp001_extreme_baseline.py)
+    - Threshold: |anomaly| > 1.5 * per-cell std-dev
+    - Total extreme cell-months: 61,921 (14.62% of all cell-months)
+    - Wet extremes: 31,109  |  Dry extremes: 30,812
+    - Round-trip NetCDF verification: PASSED
+    - Output: exp001_extreme_masks.nc, exp001_stats.json, exp001_extreme_map.png
 ```
 
 ---
@@ -270,10 +276,9 @@ SIH Second statement/
 
 ## 8. NEXT STEPS (Priority Order)
 
-1. [ ] **EXP-001: Statistical Extreme-Event Baseline** — Threshold `|anomaly| > 1.5σ` per cell to produce binary extreme-event masks. No training required. Implement in `ml/experiments/exp001_extreme_baseline.py`.
-2. [ ] **EXP-002: Persistence Baseline** — Predict `anomaly_mm` at t using `anomaly_lag1` (t-1). Evaluate on existing val/test parquet splits. Set the skill floor for all future models.
-3. [ ] **EXP-004: Spatial Event Tracking** — Connected-component labeling on extreme masks, centroid tracking, event catalog generation.
-4. [ ] **Extended ERA5 download** — Extend ERA5 record to 2010–2024 for CNN/ConvLSTM experiments (EXP-005, EXP-006). Do NOT do this until EXP-001 and EXP-002 are complete.
+1. [ ] **EXP-002: Persistence Baseline** — Predict `anomaly_mm` at t using `anomaly_lag1` (t-1). Evaluate on existing val/test parquet splits. Set the skill floor for all future models. Implement in `ml/experiments/exp002_persistence_baseline.py`.
+2. [ ] **EXP-004: Spatial Event Tracking** — Connected-component labeling on extreme masks from EXP-001, centroid tracking, event catalog generation.
+3. [ ] **Extended ERA5 download** — Extend ERA5 record to 2010-2024 for CNN/ConvLSTM experiments (EXP-005, EXP-006). Do NOT do this until EXP-002 is complete.
 
 ---
 
@@ -319,8 +324,8 @@ python plot_anomaly.py    # -> era5_anomaly_map.png (<2s)
 |---|---|
 | **Date/Time** | 2026-09-24 |
 | **Updated By** | Antigravity AI |
-| **Latest Work** | Deep ML audit completed. ML_ARCHITECTURE.md and ml/EXPERIMENT_PLAN.md created. GitHub repo pushed. Next step: implement EXP-001 and EXP-002. |
-| **Current Phase** | ML Audit and Architecture Design — COMPLETE. Ready to implement EXP-001 (statistical baseline). |
+| **Latest Work** | EXP-001 complete: statistical extreme-event baseline. 61,921 extreme cell-months detected (14.62%), round-trip NetCDF verified. |
+| **Current Phase** | EXP-001 COMPLETE. Next: EXP-002 Persistence Baseline. |
 
 ---
 
