@@ -151,6 +151,11 @@ SIH Second statement/
 [x] Baseline XGBoost model trained with early stopping (ml/train_model.py)
 [x] Model evaluation and scientific diagnostics saved (ml/models/)
 [x] Fix plot_anomaly.py (loads precipitation_anomaly.nc directly in <2s)
+[x] Deep ML audit completed: leakage confirmed absent, mean-collapse root-causes documented
+[x] ML_ARCHITECTURE.md created: task decomposition A-G, model selection rationale, atmospheric variable wishlist
+[x] ml/EXPERIMENT_PLAN.md created: EXP-001 through EXP-006 fully specified with metrics
+[x] GitHub repository initialized: remote = https://github.com/BigO-Debbuger/Pravan
+[x] First commit pushed to origin/main: aa8d22a and 4f0c77a
 ```
 
 ---
@@ -183,6 +188,8 @@ SIH Second statement/
 | `ml/models/metrics_test.json` / `.txt` | Held-out test metrics (Aug-Sep 2022) |
 | `ml/models/feature_importance.csv` / `.png` | Feature importances ranked by gain |
 | `ml/models/validation_predictions.png` | Scatter plot & residuals visualization |
+| `ML_ARCHITECTURE.md` | ML architecture design: task decomposition, model selection rationale, atmospheric variable wishlist, data pipeline for next phase |
+| `ml/EXPERIMENT_PLAN.md` | Six-experiment progression plan: EXP-001 statistical baseline → EXP-006 ConvLSTM, with inputs/targets/metrics/limitations per experiment |
 | `PROJECT_STATUS.md` | THIS FILE |
 
 ---
@@ -263,7 +270,10 @@ SIH Second statement/
 
 ## 8. NEXT STEPS (Priority Order)
 
-1. [ ] **Design and Build Stronger Spatio-Temporal Model** — The current XGBoost baseline lacks physical forecasting depth. The next phase must focus on a robust spatiotemporal modeling approach to replace the baseline.
+1. [ ] **EXP-001: Statistical Extreme-Event Baseline** — Threshold `|anomaly| > 1.5σ` per cell to produce binary extreme-event masks. No training required. Implement in `ml/experiments/exp001_extreme_baseline.py`.
+2. [ ] **EXP-002: Persistence Baseline** — Predict `anomaly_mm` at t using `anomaly_lag1` (t-1). Evaluate on existing val/test parquet splits. Set the skill floor for all future models.
+3. [ ] **EXP-004: Spatial Event Tracking** — Connected-component labeling on extreme masks, centroid tracking, event catalog generation.
+4. [ ] **Extended ERA5 download** — Extend ERA5 record to 2010–2024 for CNN/ConvLSTM experiments (EXP-005, EXP-006). Do NOT do this until EXP-001 and EXP-002 are complete.
 
 ---
 
@@ -309,8 +319,8 @@ python plot_anomaly.py    # -> era5_anomaly_map.png (<2s)
 |---|---|
 | **Date/Time** | 2026-09-24 |
 | **Updated By** | Antigravity AI |
-| **Latest Work** | Rewrote PROJECT_STATUS.md to reflect the current, verified ML state. Created GitHub checkpoint. |
-| **Current Phase** | Preparing to design and implement a robust spatio-temporal forecasting model. |
+| **Latest Work** | Deep ML audit completed. ML_ARCHITECTURE.md and ml/EXPERIMENT_PLAN.md created. GitHub repo pushed. Next step: implement EXP-001 and EXP-002. |
+| **Current Phase** | ML Audit and Architecture Design — COMPLETE. Ready to implement EXP-001 (statistical baseline). |
 
 ---
 
