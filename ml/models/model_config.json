@@ -58,10 +58,27 @@
     "eval_metric": "rmse",
     "early_stopping_rounds": 30,
     "seed": 42,
-    "verbosity": 1
+    "verbosity": 1,
+    "tree_method": "hist",
+    "device": "cuda",
+    "max_bin": 256
   },
-  "train_rows": 272250,
-  "val_rows": 30250,
-  "test_rows": 30250,
-  "dataset_note": "Training dataset covers only ~22 effective monthly timesteps (28 months minus 6 dropped for lag window). This is a very small climatological sample. Metrics should be interpreted cautiously. The model may not generalize to years/weather regimes not represented in the 2020-2022 ERA5 training window."
+  "train_rows": 1905750,
+  "val_rows": 363000,
+  "test_rows": 363000,
+  "dataset_period": "ERA5 2010-2024, India domain (6N-37N, 68E-98E), 0.25 degree",
+  "train_period": "2010-07 to 2020-12 (126 months)",
+  "val_period": "2021-01 to 2022-12 (24 months, 2 full monsoon seasons)",
+  "test_period": "2023-01 to 2024-12 (24 months, 2 full monsoon seasons, held-out)",
+  "vram_ceiling_gb": 4.0,
+  "gpu_info": {
+    "gpu_name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "vram_total_mb": 8188,
+    "vram_free_mb": 7948,
+    "vram_used_mb": 0,
+    "vram_total_gb": 8.0,
+    "vram_free_gb": 7.76,
+    "vram_used_gb": 0.0
+  },
+  "dataset_note": "Training dataset covers 126 effective monthly timesteps (180 months total, minus 6 dropped for the 6-month rolling lag window). Each row is one (grid cell, month) pair; 15,125 grid cells per timestep. Val and Test each cover 2 full calendar years with 2 complete Indian monsoon seasons. Split is strictly chronological \u2014 no temporal shuffle."
 }

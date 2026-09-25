@@ -1,0 +1,228 @@
+{
+  "experiment": "EXP-002",
+  "description": "Persistence baseline: prediction(t) = anomaly(t-1). No training.",
+  "generated_at": "2026-09-24T19:08:16.508216",
+  "methodology": {
+    "prediction": "anomaly(t-1) for each grid cell",
+    "horizon": "1 month ahead",
+    "leakage": "None \u2014 t-1 is always a prior observed value",
+    "splits": {
+      "val": {
+        "t_idxs": [
+          24,
+          25
+        ],
+        "dates": [
+          "2022-06-30",
+          "2022-07-31"
+        ]
+      },
+      "test": {
+        "t_idxs": [
+          26,
+          27
+        ],
+        "dates": [
+          "2022-08-31",
+          "2022-09-30"
+        ]
+      }
+    },
+    "note": "Same splits as EXP-003 XGBoost. Direct comparison valid. Event-based metrics use EXP-001 extreme masks (|anomaly|>1.5*local_std)."
+  },
+  "validation": {
+    "split": "validation",
+    "n_samples": 30250,
+    "n_timesteps": 2,
+    "dates": [
+      "2022-06-30",
+      "2022-07-31"
+    ],
+    "predicted_from": [
+      "2022-05-31",
+      "2022-06-30"
+    ],
+    "MAE_mm": 66.9774,
+    "RMSE_mm": 108.968,
+    "R2": -0.486411,
+    "Pearson_r": -0.1576,
+    "bias_mm": 0.4831,
+    "actual_mean_mm": -6.3964,
+    "predicted_mean_mm": -5.9133,
+    "actual_std_mm": 89.3778,
+    "predicted_std_mm": 49.821,
+    "std_ratio": 0.5574,
+    "mean_ACC": -0.1823,
+    "aggregate_event_metrics": {
+      "TP": 1323,
+      "FP": 2132,
+      "FN": 9205,
+      "TN": 17590,
+      "POD": 0.1257,
+      "FAR": 0.6171,
+      "CSI": 0.1045,
+      "ETS": 0.0105
+    },
+    "timestep_detail": [
+      {
+        "split": "validation",
+        "t_idx": 24,
+        "target_date": "2022-06-30",
+        "predicted_from": "2022-05-31",
+        "horizon_months": 1,
+        "MAE_mm": 45.2349,
+        "RMSE_mm": 70.9521,
+        "R2": -0.028577,
+        "bias_mm": 11.8265,
+        "ACC": NaN,
+        "obs_mean_mm": -11.8265,
+        "pred_mean_mm": 0.0,
+        "obs_std_mm": 69.9595,
+        "pred_std_mm": 0.0,
+        "event_metrics": {
+          "TP": 0,
+          "FP": 0,
+          "FN": 3455,
+          "TN": 11670,
+          "POD": 0.0,
+          "FAR": null,
+          "CSI": 0.0,
+          "ETS": 0.0
+        }
+      },
+      {
+        "split": "validation",
+        "t_idx": 25,
+        "target_date": "2022-07-31",
+        "predicted_from": "2022-06-30",
+        "horizon_months": 1,
+        "MAE_mm": 88.7198,
+        "RMSE_mm": 136.7985,
+        "R2": -0.697637,
+        "bias_mm": -10.8603,
+        "ACC": -0.1823,
+        "obs_mean_mm": -0.9663,
+        "pred_mean_mm": -11.8265,
+        "obs_std_mm": 104.9926,
+        "pred_std_mm": 69.9595,
+        "event_metrics": {
+          "TP": 1323,
+          "FP": 2132,
+          "FN": 5750,
+          "TN": 5920,
+          "POD": 0.187,
+          "FAR": 0.6171,
+          "CSI": 0.1437,
+          "ETS": -0.0386
+        }
+      }
+    ],
+    "note_R2": "R2 < 0 means persistence is WORSE than predicting the mean. This is expected for monsoon months with high interannual variability.",
+    "note_ACC": "ACC is spatial Pearson r of predicted vs observed anomaly per timestep. WMO skillful forecast threshold: ACC > 0.6."
+  },
+  "test": {
+    "split": "test",
+    "n_samples": 30250,
+    "n_timesteps": 2,
+    "dates": [
+      "2022-08-31",
+      "2022-09-30"
+    ],
+    "predicted_from": [
+      "2022-07-31",
+      "2022-08-31"
+    ],
+    "MAE_mm": 78.4613,
+    "RMSE_mm": 109.9349,
+    "R2": -1.459738,
+    "Pearson_r": 0.138,
+    "bias_mm": 7.1276,
+    "actual_mean_mm": -2.5735,
+    "predicted_mean_mm": 4.5541,
+    "actual_std_mm": 70.0957,
+    "predicted_std_mm": 94.6128,
+    "std_ratio": 1.3498,
+    "mean_ACC": 0.0582,
+    "aggregate_event_metrics": {
+      "TP": 3223,
+      "FP": 8995,
+      "FN": 5935,
+      "TN": 12097,
+      "POD": 0.3519,
+      "FAR": 0.7362,
+      "CSI": 0.1775,
+      "ETS": -0.0329
+    },
+    "timestep_detail": [
+      {
+        "split": "test",
+        "t_idx": 26,
+        "target_date": "2022-08-31",
+        "predicted_from": "2022-07-31",
+        "horizon_months": 1,
+        "MAE_mm": 78.3417,
+        "RMSE_mm": 110.2328,
+        "R2": -0.782037,
+        "bias_mm": -11.0406,
+        "ACC": 0.3352,
+        "obs_mean_mm": 10.0744,
+        "pred_mean_mm": -0.9663,
+        "obs_std_mm": 82.5757,
+        "pred_std_mm": 104.9926,
+        "event_metrics": {
+          "TP": 2148,
+          "FP": 4925,
+          "FN": 2997,
+          "TN": 5055,
+          "POD": 0.4175,
+          "FAR": 0.6963,
+          "CSI": 0.2133,
+          "ETS": -0.0337
+        }
+      },
+      {
+        "split": "test",
+        "t_idx": 27,
+        "target_date": "2022-09-30",
+        "predicted_from": "2022-08-31",
+        "horizon_months": 1,
+        "MAE_mm": 78.5809,
+        "RMSE_mm": 109.6363,
+        "R2": -3.471569,
+        "bias_mm": 25.2957,
+        "ACC": -0.2188,
+        "obs_mean_mm": -15.2214,
+        "pred_mean_mm": 10.0744,
+        "obs_std_mm": 51.8471,
+        "pred_std_mm": 82.5757,
+        "event_metrics": {
+          "TP": 1075,
+          "FP": 4070,
+          "FN": 2938,
+          "TN": 7042,
+          "POD": 0.2679,
+          "FAR": 0.7911,
+          "CSI": 0.133,
+          "ETS": -0.0432
+        }
+      }
+    ],
+    "note_R2": "R2 < 0 means persistence is WORSE than predicting the mean. This is expected for monsoon months with high interannual variability.",
+    "note_ACC": "ACC is spatial Pearson r of predicted vs observed anomaly per timestep. WMO skillful forecast threshold: ACC > 0.6."
+  },
+  "comparison_xgb": {
+    "note": "EXP-003 XGBoost baseline for reference (same splits)",
+    "val_MAE": 59.0602,
+    "val_RMSE": 89.5691,
+    "val_R2": -0.004286,
+    "test_MAE": 48.4801,
+    "test_RMSE": 70.685,
+    "test_R2": -0.016886
+  },
+  "limitations": [
+    "Persistence evaluated on 2-month val + 2-month test window only (small sample).",
+    "Precipitation anomalies are weakly persistent; large RMSE expected.",
+    "EXP-001 extreme masks derived from same 28-month record (not a robust climatology).",
+    "This is a floor baseline, NOT a forecast. No model accuracy is claimed."
+  ]
+}

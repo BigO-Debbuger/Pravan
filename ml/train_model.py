@@ -9,9 +9,9 @@ USAGE
 
 INPUTS (must already exist)
 -----------------------------
-    ml/processed/features_train.parquet
-    ml/processed/features_val.parquet
-    ml/processed/features_test.parquet
+    ml/processed/features_train.parquet   -- Train: 1,905,750 rows (2010-07 to 2020-12)
+    ml/processed/features_val.parquet     -- Val:   363,000 rows   (2021-01 to 2022-12)
+    ml/processed/features_test.parquet    -- Test:  363,000 rows   (2023-01 to 2024-12)
 
 OUTPUTS
 -------
@@ -25,16 +25,37 @@ OUTPUTS
     ml/models/feature_importance.png   -- bar chart of top-18 features
     ml/models/validation_predictions.png -- actual vs predicted scatter + time plot
 
+DATASET
+-------
+    Source    : ERA5 Reanalysis, India domain (6N-37N, 68E-98E), 0.25 degree
+    Period    : 2010-01 to 2024-12 (15 years, 180 monthly snapshots)
+    Usable ML : 2010-07 to 2024-12 (174 months after 6-month lag window drop)
+    Train     : 2010-07 to 2020-12 (126 months, 1,905,750 rows)
+    Val       : 2021-01 to 2022-12 (24 months,    363,000 rows) -- 2 full monsoon seasons
+    Test      : 2023-01 to 2024-12 (24 months,    363,000 rows) -- 2 full monsoon seasons (held-out)
+    Features  : 18
+    Target    : anomaly_mm (continuous monthly precipitation anomaly, mm)
+
+GPU CONFIGURATION
+-----------------
+    tree_method = "hist"   -- Memory-efficient histogram-based splits
+    device      = "cuda"   -- Offload training computation to GPU
+    max_bin     = 256      -- Bound histogram memory footprint in VRAM
+    VRAM budget : STRICT maximum of 3-4 GB (hardware is 8 GB; leave 4-5 GB headroom)
+    Dataset RAM : ~137 MB for train matrix (1,905,750 x 18 x float32)
+    Estimated VRAM usage: 300-600 MB for hist-mode XGBoost on this dataset
+
 SCIENTIFIC LIMITATIONS (explicitly documented)
 ----------------------------------------------
-  - The training dataset has only 28 monthly time steps (22 after NaN lag drop).
-    This is a very short climatological record. Any metrics should be interpreted
-    with caution. The model may not generalize well to unseen weather regimes or
-    years outside the 2020-2022 training window.
+  - Tabular XGBoost treats each (cell, month) pair as an independent sample.
+    Spatial neighborhood information (e.g., adjacent cells, upstream moisture)
+    is not captured. ConvLSTM / CNN-based models are next steps (EXP-005, EXP-006).
+  - No atmospheric driver variables (wind, moisture flux, SST, CAPE). The model
+    predicts anomalies from precipitation history alone, which is physically
+    under-constrained. This is a baseline, not an operational forecast.
   - Non-monsoon months (Oct-May) have near-zero rainfall at most grid cells.
-    The model will learn this trivially. Monsoon months (Jun-Sep) are the
-    scientifically interesting and harder-to-predict regime.
-  - Do NOT claim strong forecasting ability from a single 28-month training run.
+    The model will learn this pattern trivially. Monsoon months (Jun-Sep) are
+    the scientifically interesting and harder-to-predict regime.
 """
 
 import pathlib
@@ -105,51 +126,126 @@ TARGET_COL = "anomaly_mm"
 # ---- XGBoost hyperparameters -----------------------------------------------
 #
 # Rationale for each parameter:
-#   n_estimators=400   : Enough trees for a tabular dataset; not so many that
-#                        the model memorises the limited 22 training months.
-#   max_depth=5        : Moderate depth. Deep trees (>6) overfit badly on small
-#                        temporal datasets. Shallow trees (<=3) underfit.
-#   learning_rate=0.05 : Conservative. Slow learning rate + more trees generally
-#                        beats fast learning rate + few trees.
-#   subsample=0.8      : Stochastic gradient boosting. Reduces variance.
-#   colsample_bytree=0.8: Random feature subsampling per tree. Prevents any
-#                         single dominant feature from monopolising every tree.
-#   min_child_weight=10: Minimum sum of instance weight in a leaf. Higher value
-#                        regularises against overfitting on rare grid cells.
-#   gamma=0.1          : Minimum loss reduction to make a split. Small positive
-#                        value adds soft regularisation.
-#   reg_lambda=1.0     : L2 regularisation (ridge). XGBoost default.
-#   reg_alpha=0.0      : L1 regularisation (lasso). Off by default.
+#   n_estimators=400     : Enough trees for the 126-month training set. Not so
+#                          many that training time becomes prohibitive.
+#   max_depth=5          : Moderate depth. Deep trees (>6) overfit; shallow (<=3)
+#                          underfit. 5 is a robust default for tabular data.
+#   learning_rate=0.05   : Conservative. Slow LR + more trees beats fast LR +
+#                          fewer trees for generalization.
+#   subsample=0.8        : Stochastic gradient boosting. Reduces variance.
+#   colsample_bytree=0.8 : Random feature subsampling per tree. Prevents any
+#                          single dominant feature from monopolising every tree.
+#   min_child_weight=10  : Minimum sum of instance weight in a leaf. Regularises
+#                          against overfitting on rare grid cells.
+#   gamma=0.1            : Minimum loss reduction required to make a split.
+#                          Small positive value adds soft regularisation.
+#   reg_lambda=1.0       : L2 regularisation (ridge). XGBoost default.
+#   reg_alpha=0.0        : L1 regularisation (lasso). Off by default.
 #   objective=reg:squarederror : Standard MSE regression loss.
-#   eval_metric=rmse   : RMSE on val set used for early stopping.
+#   eval_metric=rmse     : RMSE on val set used for early stopping.
 #   early_stopping_rounds=30 : Stop if val RMSE does not improve for 30 rounds.
-#                              Prevents overfitting to the small dataset.
-#   seed=42            : Reproducibility.
+#   seed=42              : Reproducibility.
+#
+# GPU / MEMORY PARAMETERS (VRAM-safety critical):
+#   tree_method="hist"   : Histogram-based split finding. Uses compressed
+#                          histograms instead of full data in VRAM. This is the
+#                          most memory-efficient XGBoost training algorithm.
+#   device="cuda"        : Offload tree building to GPU. XGBoost hist on GPU
+#                          is faster than CPU for >1M rows.
+#   max_bin=256          : Number of histogram bins per feature. Lower values
+#                          reduce VRAM usage at the cost of minor approximation.
+#                          256 is conservative and safe for an 8 GB GPU.
+#
+# VRAM ESTIMATE:
+#   Train matrix    : 1,905,750 rows x 18 features x 4 bytes = ~137 MB
+#   XGBoost DMatrix : ~2x raw data overhead = ~275 MB
+#   Histogram trees : ~50-150 MB per tree layer (hist mode)
+#   Expected peak   : ~300-600 MB (well within 3-4 GB hard limit)
 #
 # These are "sensible baseline" parameters, NOT the result of a hyperparameter
-# search. Tuning was intentionally not performed because:
-#   (a) the dataset is too small for reliable cross-validation tuning
-#   (b) the goal is a documented, reproducible baseline, not peak performance.
+# search. Tuning was intentionally not performed:
+#   (a) the goal is a documented, reproducible baseline, not peak performance
+#   (b) this is a precursor to EXP-005 (CNN) and EXP-006 (ConvLSTM)
 
 XGB_PARAMS = {
-    "n_estimators"       : 400,
-    "max_depth"          : 5,
-    "learning_rate"      : 0.05,
-    "subsample"          : 0.8,
-    "colsample_bytree"   : 0.8,
-    "min_child_weight"   : 10,
-    "gamma"              : 0.1,
-    "reg_lambda"         : 1.0,
-    "reg_alpha"          : 0.0,
-    "objective"          : "reg:squarederror",
-    "eval_metric"        : "rmse",
+    "n_estimators"         : 400,
+    "max_depth"            : 5,
+    "learning_rate"        : 0.05,
+    "subsample"            : 0.8,
+    "colsample_bytree"     : 0.8,
+    "min_child_weight"     : 10,
+    "gamma"                : 0.1,
+    "reg_lambda"           : 1.0,
+    "reg_alpha"            : 0.0,
+    "objective"            : "reg:squarederror",
+    "eval_metric"          : "rmse",
     "early_stopping_rounds": 30,
-    "seed"               : 42,
-    "verbosity"          : 1,
+    "seed"                 : 42,
+    "verbosity"            : 1,
+    # GPU-safe memory configuration — STRICT 3-4 GB VRAM ceiling
+    "tree_method"          : "hist",    # histogram splits, minimal VRAM
+    "device"               : "cuda",    # GPU offload
+    "max_bin"              : 256,       # bound histogram memory in VRAM
 }
 
 
+# VRAM hard ceiling in GB — training will abort if exceeded
+VRAM_HARD_CEILING_GB = 4.0
+
+
 # ---- helpers ----------------------------------------------------------------
+
+def report_gpu_info() -> dict:
+    """
+    Detect and report CUDA device info and current VRAM usage.
+    Returns a dict with GPU name, total VRAM, and free VRAM.
+    Returns None if CUDA is not available.
+    """
+    try:
+        import subprocess
+        result = subprocess.run(
+            ["nvidia-smi",
+             "--query-gpu=name,memory.total,memory.free,memory.used",
+             "--format=csv,noheader,nounits"],
+            capture_output=True, text=True, timeout=10
+        )
+        if result.returncode == 0:
+            parts = [p.strip() for p in result.stdout.strip().split(",")]
+            gpu_info = {
+                "gpu_name"       : parts[0],
+                "vram_total_mb"  : int(parts[1]),
+                "vram_free_mb"   : int(parts[2]),
+                "vram_used_mb"   : int(parts[3]),
+                "vram_total_gb"  : round(int(parts[1]) / 1024, 2),
+                "vram_free_gb"   : round(int(parts[2]) / 1024, 2),
+                "vram_used_gb"   : round(int(parts[3]) / 1024, 2),
+            }
+            return gpu_info
+    except Exception:
+        pass
+    return None
+
+
+def check_vram_ceiling(stage: str, ceiling_gb: float = VRAM_HARD_CEILING_GB) -> None:
+    """
+    Query current VRAM usage and abort if it exceeds the hard ceiling.
+    Prints a formatted VRAM status line at each checkpoint.
+    """
+    info = report_gpu_info()
+    if info is None:
+        print(f"   [{stage}] VRAM check: nvidia-smi not available — skipping.")
+        return
+    used_gb = info["vram_used_gb"]
+    free_gb = info["vram_free_gb"]
+    total_gb = info["vram_total_gb"]
+    status = "OK" if used_gb < ceiling_gb else "*** CEILING EXCEEDED ***"
+    print(f"   [{stage}] VRAM: {used_gb:.2f} GB used / {total_gb:.2f} GB total "
+          f"({free_gb:.2f} GB free)  [{status}]")
+    if used_gb >= ceiling_gb:
+        raise MemoryError(
+            f"VRAM ceiling of {ceiling_gb} GB exceeded at stage '{stage}'. "
+            f"Current usage: {used_gb:.2f} GB. Aborting to protect hardware."
+        )
 
 def compute_metrics(y_true: np.ndarray, y_pred: np.ndarray, label: str) -> dict:
     mae  = float(mean_absolute_error(y_true, y_pred))
@@ -198,11 +294,28 @@ def metrics_to_txt(metrics: dict, extra_notes: str = "") -> str:
 
 def train():
     print("=" * 60)
-    print("  XGBoost BASELINE TRAINING")
+    print("  XGBoost BASELINE TRAINING  —  ERA5 2010-2024")
     print("=" * 60)
     print(f"  XGBoost version : {xgb.__version__}")
     print(f"  Features        : {len(FEATURE_COLS)}")
     print(f"  Target          : {TARGET_COL}")
+    print(f"  Dataset period  : 2010-07 to 2024-12")
+    print(f"  Train           : 2010-07 to 2020-12 (126 months)")
+    print(f"  Val             : 2021-01 to 2022-12 (24 months)")
+    print(f"  Test            : 2023-01 to 2024-12 (24 months, held-out)")
+    print()
+
+    # GPU info
+    gpu_info = report_gpu_info()
+    if gpu_info:
+        print(f"  GPU             : {gpu_info['gpu_name']}")
+        print(f"  VRAM total      : {gpu_info['vram_total_gb']:.2f} GB")
+        print(f"  VRAM used now   : {gpu_info['vram_used_gb']:.2f} GB  "
+              f"(free: {gpu_info['vram_free_gb']:.2f} GB)")
+        print(f"  VRAM ceiling    : {VRAM_HARD_CEILING_GB:.1f} GB (hard limit — will abort if exceeded)")
+    else:
+        print("  GPU             : nvidia-smi not available — proceeding with CPU")
+    print()
 
     # ---- 1. Load data -------------------------------------------------------
     print("\n[1/6] Loading parquet files...")
@@ -247,7 +360,14 @@ def train():
 
     # ---- 3. Train XGBoost ---------------------------------------------------
     print("\n[3/6] Training XGBoost regressor...")
-    print(f"   Parameters: {XGB_PARAMS}")
+    print(f"   tree_method  : hist  (memory-efficient histogram splits)")
+    print(f"   device       : cuda  (GPU offload)")
+    print(f"   max_bin      : 256   (VRAM histogram bound)")
+    print(f"   VRAM ceiling : {VRAM_HARD_CEILING_GB:.1f} GB")
+    print(f"   Full params  : {XGB_PARAMS}")
+
+    # VRAM pre-training checkpoint
+    check_vram_ceiling("pre-training")
 
     # Separate early_stopping_rounds from the constructor params
     # (XGBoost 2.x: pass in constructor for best practice)
@@ -255,7 +375,6 @@ def train():
                        if k != "early_stopping_rounds"}
     # Add early_stopping_rounds to constructor (XGBoost 2.x preferred style)
     params_for_init["early_stopping_rounds"] = XGB_PARAMS["early_stopping_rounds"]
-    early_stop = None   # not passed to fit() to avoid deprecation warning
 
     model = xgb.XGBRegressor(**params_for_init)
     model.fit(
@@ -263,6 +382,9 @@ def train():
         eval_set=[(X_train, y_train), (X_val, y_val)],
         verbose=50,
     )
+
+    # VRAM post-training checkpoint
+    check_vram_ceiling("post-training")
 
     best_iter = model.best_iteration
     print(f"\n   Best iteration (early stopping): {best_iter}")
@@ -284,12 +406,18 @@ def train():
         "train_rows"         : int(X_train.shape[0]),
         "val_rows"           : int(X_val.shape[0]),
         "test_rows"          : int(X_test.shape[0]),
+        "dataset_period"     : "ERA5 2010-2024, India domain (6N-37N, 68E-98E), 0.25 degree",
+        "train_period"       : "2010-07 to 2020-12 (126 months)",
+        "val_period"         : "2021-01 to 2022-12 (24 months, 2 full monsoon seasons)",
+        "test_period"        : "2023-01 to 2024-12 (24 months, 2 full monsoon seasons, held-out)",
+        "vram_ceiling_gb"    : VRAM_HARD_CEILING_GB,
+        "gpu_info"           : gpu_info,
         "dataset_note"       : (
-            "Training dataset covers only ~22 effective monthly timesteps "
-            "(28 months minus 6 dropped for lag window). This is a very small "
-            "climatological sample. Metrics should be interpreted cautiously. "
-            "The model may not generalize to years/weather regimes not represented "
-            "in the 2020-2022 ERA5 training window."
+            "Training dataset covers 126 effective monthly timesteps "
+            "(180 months total, minus 6 dropped for the 6-month rolling lag window). "
+            "Each row is one (grid cell, month) pair; 15,125 grid cells per timestep. "
+            "Val and Test each cover 2 full calendar years with 2 complete Indian monsoon "
+            "seasons. Split is strictly chronological — no temporal shuffle."
         ),
     }
     with open(MODEL_DIR / "model_config.json", "w") as f:
@@ -322,10 +450,12 @@ def train():
         warnings.append("No obvious collapse, extreme bias, or suspiciously high R2 detected.")
 
     val_metrics["scientific_limitation"] = (
-        "Dataset spans 28 months (22 usable after lag window drops). Val set covers "
-        "Jun-Jul 2022 (2 early monsoon months with active rainfall variance). "
-        "Because training contains only one prior monsoon season (2021), interannual "
-        "variability is high and generalization is strictly constrained by sample size."
+        "Dataset spans 2010-07 to 2024-12 (174 usable months after 6-month lag window drop). "
+        "Train covers 2010-07 to 2020-12 (126 months, 10 complete Indian monsoon seasons). "
+        "Val covers 2021-01 to 2022-12 (24 months, 2 complete monsoon seasons). "
+        "This tabular XGBoost baseline treats each (cell, month) pair independently — "
+        "spatial neighborhood structure is not captured. ConvLSTM and CNN models "
+        "(EXP-005, EXP-006) are the next steps to exploit spatial structure."
     )
 
     print(metrics_to_txt(val_metrics))
@@ -484,7 +614,7 @@ def train():
     ax3.spines["right"].set_visible(False)
 
     fig.suptitle("XGBoost Baseline — Validation Set Performance\n"
-                 "(ERA5 Monthly Precipitation Anomaly, India 2020-2022)",
+                 "(ERA5 Monthly Precipitation Anomaly, India 2010-2024 | Val: 2021-01 to 2022-12)",
                  fontsize=13, y=1.01)
     plt.savefig(MODEL_DIR / "validation_predictions.png",
                 dpi=150, bbox_inches="tight")
@@ -506,10 +636,11 @@ def train():
     test_metrics["predicted_std_ratio_to_actual"] = round(test_std_ratio, 4)
     test_metrics["mean_bias_mm"] = round(test_mean_bias, 4)
     test_metrics["scientific_limitation"] = (
-        "Test set covers Aug-Sep 2022 (2 held-out late monsoon months). This represents "
-        "a strict out-of-time evaluation during peak monsoon variability. "
-        "With only 2 months of test snapshots, metrics should be interpreted with awareness "
-        "of short-record sample variance."
+        "Test set covers 2023-01 to 2024-12 (24 held-out months, 2 full monsoon seasons). "
+        "This represents a strict out-of-time evaluation — the model never saw any data "
+        "from 2023 or 2024 during training or validation. "
+        "This tabular XGBoost baseline does not capture spatial neighborhood structure; "
+        "EXP-005 (CNN) and EXP-006 (ConvLSTM) are the planned next steps."
     )
 
     test_warnings = []
@@ -530,7 +661,7 @@ def train():
         json.dump(test_metrics, f, indent=2)
     txt = metrics_to_txt(test_metrics)
     txt += "\n\nFINAL TEST SET - HELD OUT\n"
-    txt += "Test covers Aug-Sep 2022 (2 held-out late monsoon months)\n\n"
+    txt += "Test covers 2023-01 to 2024-12 (24 held-out months, 2 full monsoon seasons)\n\n"
     txt += "SCIENTIFIC CHECKS:\n"
     for w in test_warnings:
         txt += f"  {w}\n"
@@ -569,21 +700,28 @@ def train():
         print("\n   WARNING: Some expected files are missing!")
 
     print("\n" + "=" * 60)
-    print("  TRAINING COMPLETE")
+    print("  TRAINING COMPLETE  —  ERA5 2010-2024")
     print("=" * 60)
-    print(f"  Val  MAE  = {val_metrics['MAE_mm']:.2f} mm")
+    print(f"  Val  MAE  = {val_metrics['MAE_mm']:.2f} mm  (Val: 2021-01 to 2022-12)")
     print(f"  Val  RMSE = {val_metrics['RMSE_mm']:.2f} mm")
     print(f"  Val  R2   = {val_metrics['R2']:.4f}")
-    print(f"  Test MAE  = {test_metrics['MAE_mm']:.2f} mm")
+    print(f"  Test MAE  = {test_metrics['MAE_mm']:.2f} mm  (Test: 2023-01 to 2024-12, held-out)")
     print(f"  Test RMSE = {test_metrics['RMSE_mm']:.2f} mm")
     print(f"  Test R2   = {test_metrics['R2']:.4f}")
     print(f"  Top features: {fi_df.head(5)['feature'].tolist()}")
     print()
-    print("  IMPORTANT LIMITATION:")
-    print("  The training dataset covers only ~22 effective monthly timesteps.")
-    print("  These metrics should NOT be used to claim reliable real-world")
-    print("  forecasting ability. They represent in-sample performance on a")
-    print("  very short ERA5 record (Jun 2020 - Sep 2022).")
+    print("  SCIENTIFIC CONTEXT:")
+    print("  Training covers 126 months (2010-07 to 2020-12), 10 complete monsoon seasons.")
+    print("  This is an XGBoost tabular baseline; each grid cell row is treated independently.")
+    print("  Spatial neighborhood structure is NOT captured — see EXP-005 (CNN) and")
+    print("  EXP-006 (ConvLSTM) for spatiotemporal models.")
+    print()
+    # Final VRAM report
+    final_info = report_gpu_info()
+    if final_info:
+        print(f"  Final VRAM usage: {final_info['vram_used_gb']:.2f} GB / "
+              f"{final_info['vram_total_gb']:.2f} GB  "
+              f"(ceiling was {VRAM_HARD_CEILING_GB:.1f} GB)")
 
     return {
         "val_metrics" : val_metrics,

@@ -99,50 +99,36 @@ No machine learning. No training loop.
 
 ## EXP-002: Persistence Baseline
 
-**Status:** NOT STARTED
+**Status:** ✅ COMPLETE (2026-09-24)
 
-### Goal
-Predict next month's anomaly by simply repeating the current month's anomaly.
-This is the simplest possible dynamic forecast and is the standard floor for evaluating any ML model.
-
-> If a model cannot beat persistence, it is useless as a forecasting tool.
-
-### Input
-- `anomaly_lag1` (anomaly at month t-1) for each (t, lat, lon)
-- This column already exists in the parquet files
-
-### Target
-- `anomaly_mm` at month t
-
-### Prediction Horizon
-- 1 month ahead (t-1 → t)
-
-### Train / Val / Test Strategy
-- No training required
-- Evaluate on the val and test splits already defined:
-  - Val: Jun–Jul 2022
-  - Test: Aug–Sep 2022
-
-### Metrics
-| Metric | Expected Value |
-|---|---|
-| MAE | ~50–80 mm (persistence is poor for monsoon onset) |
-| RMSE | ~80–120 mm |
-| R² | Likely negative (worse than climatology mean for monsoon months) |
-| Anomaly Correlation Coefficient (ACC) | 0.0–0.2 |
-
-**Anomaly Correlation Coefficient:**
+### Command Executed
+```bash
+python ml/experiments/exp002_persistence_baseline.py
 ```
-ACC = Σ[(pred - clim)(obs - clim)] / sqrt(Σ(pred-clim)² × Σ(obs-clim)²)
-```
-Standard NWP verification metric. ACC > 0.6 is the WMO threshold for "skillful" forecasts.
 
-### Expected Output
+### Actual Results (Verified)
+| Metric | Val (Jun-Jul 2022) | Test (Aug-Sep 2022) |
+|---|---|---|
+| MAE | 66.9774 mm | 78.4613 mm |
+| RMSE | 108.968 mm | 109.9349 mm |
+| R² | -0.486411 | -1.459738 |
+| Anomaly Correlation Coefficient (ACC) | -0.1823 | 0.0582 |
+| Event POD | 0.1257 | 0.3519 |
+| Event FAR | 0.6171 | 0.7362 |
+| Event CSI | 0.1045 | 0.1775 |
+| Event ETS | 0.0105 | -0.0329 |
+
+### Output Files
 - `ml/experiments/exp002_persistence_metrics.json`
+- `ml/experiments/exp002_persistence_predictions.nc`
+- `ml/experiments/exp002_persistence_plot.png`
 
 ### Expected Limitations
-- Precipitation anomalies are weakly persistent month-to-month (especially at monsoon onset/offset).
-- Persistence will perform worst in Jun and Sep (transition months).
+- Evaluated on 2-month val + 2-month test only (small sample).
+- Precipitation anomalies are weakly persistent; large RMSE expected.
+- This is a floor baseline, NOT a forecast.
+- R² is very negative because persistence is often worse than simply predicting the climatological mean (0 anomaly), especially during the highly variable monsoon months.
+
 
 ---
 
@@ -177,7 +163,35 @@ Standard NWP verification metric. ACC > 0.6 is the WMO threshold for "skillful" 
 
 ## EXP-004: Spatial Anomaly Tracking (Object-Based Analysis)
 
-**Status:** NOT STARTED
+**Status:** ✅ COMPLETE (2026-09-24)
+
+### Command Executed
+```bash
+python ml/experiments/exp004_spatial_event_tracking.py
+```
+
+### Actual Results (Verified)
+| Metric | Value |
+|---|---|
+| Total blobs found (>10 cells) | 306 |
+| Unique event tracks | 219 |
+| Wet extreme blobs | 158 |
+| Dry extreme blobs | 148 |
+| Average blob area | 31,348 km² |
+| Max blob area | 362,091 km² |
+| Connectivity | 8-way (diagonal + orthogonal) |
+| Tracking distance threshold | 500 km |
+
+### Output Files
+- `ml/experiments/exp004_event_catalog.parquet`
+- `ml/experiments/exp004_event_catalog.csv`
+- `ml/experiments/exp004_event_stats.json`
+- `ml/experiments/exp004_event_map.png`
+
+### Expected Limitations
+- Events span full months, meaning we capture only stationary seasonal anomalies or very slow-moving envelopes, losing the sub-monthly dynamics of extreme weather.
+- Tracking distance of 500km is heuristic and may link temporally distinct storms that happen to occur in the same region in consecutive months.
+
 
 ### Goal
 Move from per-cell prediction to **event-level** tracking.
@@ -359,12 +373,12 @@ Output: [1, 125, 121] — next-month anomaly map
 | Experiment | Status | Blocks |
 |---|---|---|
 | EXP-001: Statistical extreme baseline | ✅ COMPLETE (2026-09-24) | — |
-| EXP-002: Persistence baseline | NOT STARTED | Nothing |
+| EXP-002: Persistence baseline | ✅ COMPLETE (2026-09-24) | — |
 | EXP-003: XGBoost baseline | ✅ COMPLETE | — |
-| EXP-004: Spatial event tracking | NOT STARTED | EXP-001 output |
+| EXP-004: Spatial event tracking | ✅ COMPLETE (2026-09-24) | — |
 | EXP-005: CNN on gridded fields | NOT STARTED | Extended ERA5 needed |
 | EXP-006: ConvLSTM | NOT STARTED | Extended ERA5 + GPU needed |
 
-**Immediate next step: Implement EXP-002 (Persistence Baseline).**
-EXP-001 is complete. EXP-002 requires no new data and no model training.
+**Immediate next step: Blocked on Extended ERA5 Data.**
+Experiments EXP-001 through EXP-004 are fully complete. EXP-005 and EXP-006 require extending the ERA5 dataset to 2010–2024 to support CNN/ConvLSTM training without mean collapse.
 

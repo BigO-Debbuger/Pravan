@@ -1,11 +1,11 @@
 SPLIT SUMMARY
 ==================================================
-Total months (after NaN drop) : 22
+Total months (after NaN drop) : 174
 First 6 months dropped (incomplete lag windows)
 
-TRAIN : 18 months | 2020-12-31 to 2022-05-31 | 272,250 rows
-VAL   : 2 months | 2022-06-30 to 2022-07-31 | 30,250 rows
-TEST  : 2 months | 2022-08-31 to 2022-09-30 | 30,250 rows
+TRAIN : 126 months | 2010-07-31 to 2020-12-31 | 1,905,750 rows
+VAL   : 24 months | 2021-01-31 to 2022-12-31 | 363,000 rows
+TEST  : 24 months | 2023-01-31 to 2024-12-31 | 363,000 rows
 
 FEATURES (18 raw, 18 scaled):
   year
@@ -32,21 +32,21 @@ TARGET: anomaly_mm
 SCALER: fit on TRAIN only (mean/std per feature)
 
 SCALER PARAMS (train):
-  year                     : mean=2021.2223, std=0.5329
-  month                    : mean=5.8333, std=3.6248
-  month_sin                : mean=0.2073, std=0.6760
-  month_cos                : mean=0.0556, std=0.7049
-  months_since_start       : mean=14.5000, std=5.1881
+  year                     : mean=2015.2382, std=19.2097
+  month                    : mean=6.6429, std=3.4481
+  month_sin                : mean=-0.0296, std=0.7060
+  month_cos                : mean=0.0079, std=0.7070
+  months_since_start       : mean=68.5000, std=36.2973
   lat                      : mean=21.5000, std=9.0208
   lon                      : mean=83.0000, std=8.7321
-  lat_norm                 : mean=0.0000, std=1.0000
+  lat_norm                 : mean=-0.0000, std=1.0000
   lon_norm                 : mean=0.0000, std=1.0000
-  climatology_mm           : mean=49.8363, std=119.7454
-  anomaly_lag1             : mean=-2.3170, std=40.0344
-  anomaly_lag2             : mean=-2.3170, std=40.0344
-  anomaly_lag3             : mean=-1.9811, std=44.5562
-  precip_lag1              : mean=47.5193, std=120.9930
-  precip_lag2              : mean=47.5193, std=120.9930
-  rolling_mean_3m          : mean=51.3939, std=100.9947
-  rolling_std_3m           : mean=42.7146, std=78.9057
-  rolling_mean_6m          : mean=69.4924, std=85.0946
+  climatology_mm           : mean=119.6094, std=139.9822
+  anomaly_lag1             : mean=-0.5687, std=68.3157
+  anomaly_lag2             : mean=-0.4773, std=68.4568
+  anomaly_lag3             : mean=-0.4725, std=68.2126
+  precip_lag1              : mean=120.1813, std=157.0181
+  precip_lag2              : mean=120.5435, std=157.1902
+  rolling_mean_3m          : mean=120.2191, std=133.7112
+  rolling_std_3m           : mean=68.1769, std=74.7249
+  rolling_mean_6m          : mean=118.3900, std=105.5803

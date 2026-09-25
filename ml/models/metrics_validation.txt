@@ -1,21 +1,21 @@
 ============================================================
   METRICS — VALIDATION
 ============================================================
-  Samples          : 30,250
-  MAE              : 59.0602 mm
-  RMSE             : 89.5691 mm
-  R2               : -0.004286
+  Samples          : 363,000
+  MAE              : 43.1999 mm
+  RMSE             : 73.4839 mm
+  R2               : -0.003363
 
-  Actual mean      : -6.3964 mm
-  Predicted mean   : -2.6875 mm
-  Actual std       : 89.3778 mm
-  Predicted std    : 1.2354 mm
-  Predicted min    : -14.7125 mm
-  Predicted max    : -1.9985 mm
+  Actual mean      : 3.6170 mm
+  Predicted mean   : -0.3859 mm
+  Actual std       : 73.3607 mm
+  Predicted std    : 1.0731 mm
+  Predicted min    : -2.6187 mm
+  Predicted max    : 14.1058 mm
 ============================================================
 
 SCIENTIFIC CHECKS:
-  WARNING: Predictions may be collapsing toward mean (pred_std/true_std = 0.014).
+  WARNING: Predictions may be collapsing toward mean (pred_std/true_std = 0.015).
 
 SCIENTIFIC LIMITATION:
-  Dataset spans 28 months (22 usable after lag window drops). Val set covers Jun-Jul 2022 (2 early monsoon months with active rainfall variance). Because training contains only one prior monsoon season (2021), interannual variability is high and generalization is strictly constrained by sample size.
+  Dataset spans 2010-07 to 2024-12 (174 usable months after 6-month lag window drop). Train covers 2010-07 to 2020-12 (126 months, 10 complete Indian monsoon seasons). Val covers 2021-01 to 2022-12 (24 months, 2 complete monsoon seasons). This tabular XGBoost baseline treats each (cell, month) pair independently — spatial neighborhood structure is not captured. ConvLSTM and CNN models (EXP-005, EXP-006) are the next steps to exploit spatial structure.

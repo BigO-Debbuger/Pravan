@@ -1,24 +1,24 @@
 ============================================================
   METRICS — TEST (FINAL)
 ============================================================
-  Samples          : 30,250
-  MAE              : 48.4801 mm
-  RMSE             : 70.6850 mm
-  R2               : -0.016886
+  Samples          : 363,000
+  MAE              : 40.6923 mm
+  RMSE             : 69.5007 mm
+  R2               : 0.000230
 
-  Actual mean      : -2.5735 mm
-  Predicted mean   : -3.1419 mm
-  Actual std       : 70.0957 mm
-  Predicted std    : 3.1397 mm
-  Predicted min    : -22.3727 mm
-  Predicted max    : 13.1676 mm
+  Actual mean      : -0.0251 mm
+  Predicted mean   : -0.3918 mm
+  Actual std       : 69.5087 mm
+  Predicted std    : 1.1042 mm
+  Predicted min    : -2.6187 mm
+  Predicted max    : 14.1058 mm
 ============================================================
 
 FINAL TEST SET - HELD OUT
-Test covers Aug-Sep 2022 (2 held-out late monsoon months)
+Test covers 2023-01 to 2024-12 (24 held-out months, 2 full monsoon seasons)
 
 SCIENTIFIC CHECKS:
-  WARNING: Predictions collapsing toward mean (std ratio = 0.045).
+  WARNING: Predictions collapsing toward mean (std ratio = 0.016).
 
 SCIENTIFIC LIMITATION:
-  Test set covers Aug-Sep 2022 (2 held-out late monsoon months). This represents a strict out-of-time evaluation during peak monsoon variability. With only 2 months of test snapshots, metrics should be interpreted with awareness of short-record sample variance.
+  Test set covers 2023-01 to 2024-12 (24 held-out months, 2 full monsoon seasons). This represents a strict out-of-time evaluation — the model never saw any data from 2023 or 2024 during training or validation. This tabular XGBoost baseline does not capture spatial neighborhood structure; EXP-005 (CNN) and EXP-006 (ConvLSTM) are the planned next steps.

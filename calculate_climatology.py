@@ -1,54 +1,64 @@
 import xarray as xr
-import numpy as np
+import pathlib
+import time
 
-file_path = r"C:\Users\Manas Negi\OneDrive\Desktop\SIH Second statement\4572d4b99342c81e5c37ac789460b190\data_stream-oper_stepType-accum.nc"
+ROOT = pathlib.Path(__file__).resolve().parent
+file_path = ROOT / "era5_tp_india_2010_2024.nc"
+monthly_out = ROOT / "precipitation_monthly.nc"
+clim_out = ROOT / "precipitation_climatology.nc"
+anom_out = ROOT / "precipitation_anomaly.nc"
 
-print("Opening ERA5 dataset...")
+def main():
+    t0 = time.time()
+    print("Opening ERA5 dataset...")
 
-ds = xr.open_dataset(file_path)
+    # Open without dask (lazy load)
+    ds = xr.open_dataset(file_path)
 
-tp = ds["tp"]
+    print("Calculating monthly precipitation year-by-year (fast and keeps RAM well below 3-4 GB limit)...")
+    monthly_data_list = []
 
-print("\n========== DATA ==========")
-print("Time:", ds.valid_time.values[0], "to", ds.valid_time.values[-1])
-print("Shape:", tp.shape)
-print("Units:", tp.attrs["units"])
+    # Xarray explicit chunking: Process year by year to keep RAM usage < 1 GB
+    for year in range(2010, 2025):
+        # Select year
+        ds_year = ds.sel(valid_time=str(year))
+        # Load into memory for fast processing (1 year = ~500 MB)
+        tp = ds_year["tp"].load()
+        
+        # Fill NaN (GRIB artefacts) and convert to mm
+        tp_mm = tp.fillna(0.0) * 1000.0
+        
+        # Resample to daily, then monthly
+        daily = tp_mm.resample(valid_time="1D").sum(skipna=True)
+        monthly = daily.resample(valid_time="1ME").sum(skipna=True)
+        
+        monthly_data_list.append(monthly)
+        print(f"  Processed {year}")
 
-# Convert precipitation from meters to millimeters
-tp_mm = tp * 1000
+    # Combine all months
+    print("Combining all months...")
+    monthly_precip = xr.concat(monthly_data_list, dim="valid_time")
+    monthly_precip.name = "tp"
 
-print("\nConverted precipitation from meters to millimeters.")
+    print(f"Saving {monthly_out.name}...")
+    monthly_precip.to_netcdf(monthly_out)
 
-# Create daily totals from hourly precipitation
-daily_precip = tp_mm.resample(valid_time="1D").sum()
+    print("Computing 12-month climatology...")
+    climatology = monthly_precip.groupby("valid_time.month").mean("valid_time")
+    climatology.name = "tp"
+    print(f"Saving {clim_out.name}...")
+    climatology.to_netcdf(clim_out)
 
-print("\n========== DAILY DATA ==========")
-print("Shape:", daily_precip.shape)
-print("First day:", daily_precip.valid_time.values[0])
-print("Last day:", daily_precip.valid_time.values[-1])
+    print("Computing monthly anomaly...")
+    anomaly = monthly_precip.groupby("valid_time.month") - climatology
+    anomaly.name = "tp"
+    print(f"Saving {anom_out.name}...")
+    anomaly.to_netcdf(anom_out)
 
-# Create monthly climatology
-monthly_precip = daily_precip.resample(valid_time="1ME").sum()
+    ds.close()
 
-climatology = monthly_precip.groupby(
-    "valid_time.month"
-).mean("valid_time")
+    t1 = time.time()
+    print(f"\nPreprocessing complete in {t1 - t0:.1f} seconds.")
 
-print("\n========== CLIMATOLOGY ==========")
-print(climatology)
-
-# Calculate monthly anomaly
-anomaly = monthly_precip.groupby(
-    "valid_time.month"
-) - climatology
-
-print("\n========== ANOMALY ==========")
-print(anomaly)
-
-# Save results
-climatology.to_netcdf("precipitation_climatology.nc")
-anomaly.to_netcdf("precipitation_anomaly.nc")
-
-print("\nSaved:")
-print("  precipitation_climatology.nc")
-print("  precipitation_anomaly.nc")
+if __name__ == "__main__":
+    main()

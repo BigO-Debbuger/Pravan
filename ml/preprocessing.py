@@ -33,7 +33,7 @@ import pandas as pd
 # ---- paths -----------------------------------------------------------------
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent   # project root
-RAW_NC = ROOT / "4572d4b99342c81e5c37ac789460b190" / "data_stream-oper_stepType-accum.nc"
+RAW_NC = ROOT / "era5_tp_india_2010_2024.nc"
 CLIM_NC = ROOT / "precipitation_climatology.nc"
 ANOM_NC = ROOT / "precipitation_anomaly.nc"
 
@@ -63,8 +63,8 @@ def load_daily(fill_nan: bool = True) -> xr.DataArray:
 
     Returns: DataArray (days × lat × lon), mm/day.
     """
-    print("[preprocessing] Loading raw ERA5 NetCDF (this may take ~30 s)...")
-    ds = xr.open_dataset(RAW_NC)
+    print("[preprocessing] Loading raw ERA5 NetCDF with Dask chunking...")
+    ds = xr.open_dataset(RAW_NC, chunks={"valid_time": 720})
     tp_mm = ds["tp"] * 1000.0   # m -> mm
 
     if fill_nan:

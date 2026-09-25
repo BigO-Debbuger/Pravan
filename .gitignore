@@ -17,3 +17,12 @@ env/
 node_modules/
 dist/
 .DS_Store
+.env
+data/
+
+# User requested ignore rules
+data/era5_extended/
+ml/processed/*.parquet
+ml/experiments/*.nc
+ml/experiments/*.parquet
+scratch_*.py

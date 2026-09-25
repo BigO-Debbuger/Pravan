@@ -51,13 +51,13 @@ DATA LEAKAGE PREVENTION
 
 SPLIT STRATEGY
 ==============
-  With 28 months of data:
-    Train : months 0..20  (Jun 2020 – Feb 2022, 21 months)
-    Val   : months 21..23 (Mar 2022 – May 2022,  3 months)
-    Test  : months 24..27 (Jun 2022 – Sep 2022,  4 months)
+  With 180 months of data (2010-2024):
+    Train : months 6..131   (Jul 2010 – Dec 2020, 126 months)
+    Val   : months 132..155 (Jan 2021 – Dec 2022, 24 months)
+    Test  : months 156..179 (Jan 2023 – Dec 2024, 24 months)
 
   NOTE: Due to lag features, rows where lag windows are undefined
-  (the first 3 months: Jun-Aug 2020) are dropped from the dataset.
+  (the first 6 months: Jan-Jun 2010) are dropped from the dataset.
   These rows have NaN lag features and cannot be used for training.
 
 OUTPUT
@@ -84,9 +84,9 @@ from preprocessing import load_climatology, load_anomaly
 OUT_DIR = ROOT / "ml" / "processed"
 
 # ---- Split configuration ---------------------------------------------------
-N_MONTHS      = 28   # total months in anomaly file
-VAL_START_IDX = 21   # index of first validation month
-TEST_START_IDX = 24  # index of first test month
+N_MONTHS      = 180  # total months in anomaly file (2010-2024)
+VAL_START_IDX = 132  # index of first validation month (Jan 2021)
+TEST_START_IDX = 156 # index of first test month (Jan 2023)
 
 # ---- helpers ----------------------------------------------------------------
 
@@ -295,35 +295,26 @@ def build_feature_matrix(verbose: bool = True) -> dict:
 
     # Monsoon-aware chronological split
     # ---------------------------------------------------------------
-    # Problem discovered: the naive percentage split placed the entire
-    # validation set on non-monsoon months (Mar-May 2022), which have
-    # anomaly = 0.0 at every grid cell in this dataset. This makes R2
-    # undefined and early stopping meaningless (the model converges on
-    # a trivially constant target, not learning monsoon variability).
+    # The split ensures each set contains full calendar years to
+    # capture the full Indian monsoon cycle and non-monsoon periods.
     #
-    # Fix: explicitly assign the 2022 monsoon months to val/test.
-    # Non-monsoon months only occur in training (as context for lag features).
+    # Train: t=6..131  (Jul 2010 - Dec 2020) | 126 months
+    #   Provides: 10 full monsoon seasons for the model to learn
+    #   long-term interannual variability.
     #
-    # Train: t=6..23  (Dec 2020 - May 2022) | 18 months
-    #   Contains: 4 monsoon months (Jun-Sep 2021) + 14 non-monsoon months
-    #   Provides: the model learns monsoon anomaly patterns from 2021.
+    # Val:   t=132..155 (Jan 2021 - Dec 2022) | 24 months
+    #   Contains: 2 full years (2 monsoons) for robust early stopping
+    #   and hyperparameter tuning.
     #
-    # Val:   t=24,25  (Jun 2022, Jul 2022)  | 2 months
-    #   Contains: 2 monsoon months -- both have real variance for evaluation.
-    #   Used for: early stopping signal and hyperparameter guidance.
-    #
-    # Test:  t=26,27  (Aug 2022, Sep 2022)  | 2 months
-    #   Contains: 2 monsoon months -- held out, never seen during training.
+    # Test:  t=156..179 (Jan 2023 - Dec 2024) | 24 months
+    #   Contains: 2 full years (2 monsoons) held-out, never seen.
     #   Used for: FINAL evaluation only (run once).
-    #
-    # Limitation: val=2 months and test=2 months is very small.
-    # Metrics must be interpreted with high uncertainty.
 
-    # Fixed explicit time index assignments (after NaN drop, t=6..27 available)
+    # Fixed explicit time index assignments (after NaN drop, t=6..179 available)
     remaining_time_idxs = sorted(int(x) for x in df_all["time_idx"].unique())
-    train_idxs = [t for t in remaining_time_idxs if t <= 23]
-    val_idxs   = [t for t in remaining_time_idxs if t in (24, 25)]
-    test_idxs  = [t for t in remaining_time_idxs if t in (26, 27)]
+    train_idxs = [t for t in remaining_time_idxs if t <= 131]
+    val_idxs   = [t for t in remaining_time_idxs if 132 <= t <= 155]
+    test_idxs  = [t for t in remaining_time_idxs if 156 <= t <= 179]
 
 
 

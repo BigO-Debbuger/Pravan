@@ -1,0 +1,29 @@
+{
+  "experiment": "EXP-004",
+  "description": "Spatial event tracking based on EXP-001 connected components",
+  "generated_at": "2026-09-24T19:11:56.299387",
+  "parameters": {
+    "min_cells": 10,
+    "min_area_km2_approx": 6250,
+    "connectivity": "8-way (diagonal + orthogonal)",
+    "tracking_dist_threshold_km": 500
+  },
+  "summary": {
+    "total_timesteps": 28,
+    "total_blobs_found": 306,
+    "unique_event_tracks": 219,
+    "wet_blobs": 156,
+    "dry_blobs": 150,
+    "mean_area_km2": 139152.15066690202,
+    "median_area_km2": 21518.679834820905,
+    "max_area_km2": 3195037.090664712,
+    "mean_persistence_months": 1.3972602739726028,
+    "max_persistence_months": 4.0
+  },
+  "monthly_distribution": {
+    "6": 78,
+    "7": 88,
+    "8": 64,
+    "9": 76
+  }
+}
